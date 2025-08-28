@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+   <title>Primeiro Teste: Loop de Animação com Sprites</title>
+   <script src="animacao.js"></script>
+   <script src="bola.js"></script>
+</head>
+
+<body>
+   <canvas id="canvas_animacao"></canvas>
+   <div id="contadorBolas" style="position:absolute;top:10px;left:10px;font-size:1.5em;color:#222;background:rgba(255,255,255,0.7);padding:0.3em 1em;border-radius:10px;z-index:10;">Bolas: 0 | Rosa bebê: 0</div>
+   <button id="btnRestart" style="display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:2em;padding:0.5em 2em;z-index:10;background:transparent;border:none;font-weight:bold;transition:color 0.2s;">Jogar novamente</button>
+   <style>
+      #btnRestart:hover {
+         color: #FFC0CB;
+      }
+   </style>
+   <script>
+   var canvas = document.getElementById('canvas_animacao');
+   var btnRestart = document.getElementById('btnRestart');
+   var contadorBolas = document.getElementById('contadorBolas');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      var context = canvas.getContext('2d');
+
+      // Função para gerar cor aleatória
+      function corAleatoria() {
+         var letras = '0123456789ABCDEF';
+         var cor = '#';
+         for (var i = 0; i < 6; i++) cor += letras[Math.floor(Math.random() * 16)];
+         return cor;
+      }
+
+      // Gerar 15 bolas com posições, cores e tamanhos aleatórios
+      function gerarBolas() {
+         var bolas = [];
+         var largura = canvas.width;
+         var altura = canvas.height;
+         for (var i = 0; i < 15; i++) {
+            var raio = 18 + Math.random() * 18;
+            var b = new Bola(context);
+            b.x = Math.random() * (largura - 2*raio) + raio;
+            b.y = Math.random() * (altura - 2*raio) + raio;
+            b.velocidadeX = (Math.random() - 0.5) * 5;
+            b.velocidadeY = (Math.random() - 0.5) * 5;
+            b.cor = corAleatoria();
+            b.raio = raio;
+            bolas.push(b);
+         }
+         return bolas;
+      }
+
+      var bolas = gerarBolas();
+      var animacao = new Animacao(context);
+      bolas.forEach(function(b){ animacao.novoSprite(b); });
+
+      // Atualiza contador
+      function atualizarContador() {
+         var total = bolas.length;
+         var rosas = bolas.filter(function(b){ return b.rosa; }).length;
+         contadorBolas.textContent = 'Bolas: ' + total + ' | Rosa bebê: ' + rosas;
+      }
+
+      // Clique para liberar bolas piscando
+      canvas.addEventListener('click', function(e) {
+         var rect = canvas.getBoundingClientRect();
+         var mouseX = e.clientX - rect.left;
+         var mouseY = e.clientY - rect.top;
+         bolas.forEach(function(b) {
+            if (b.piscar) {
+               var dx = b.x - mouseX;
+               var dy = b.y - mouseY;
+               if (Math.sqrt(dx*dx + dy*dy) < b.raio) {
+                  b.liberar();
+                  atualizarContador();
+               }
+            }
+         });
+      });
+
+      // Reiniciar jogo
+      btnRestart.addEventListener('click', function() {
+         btnRestart.style.display = 'none';
+         // Resetar bolas
+         bolas.forEach(function(b) {
+            b.rosa = false;
+            b.piscar = false;
+            b.congelada = false;
+            b.cor = corAleatoria();
+            b.x = Math.random() * (canvas.width - 2*b.raio) + b.raio;
+            b.y = Math.random() * (canvas.height - 2*b.raio) + b.raio;
+            b.velocidadeX = (Math.random() - 0.5) * 5;
+            b.velocidadeY = (Math.random() - 0.5) * 5;
+         });
+         atualizarContador();
+         animacao.ligado = true;
+         animacao.proximoFrame();
+      });
+
+      // Atualiza contador periodicamente
+      function loopContador() {
+         atualizarContador();
+         requestAnimationFrame(loopContador);
+      }
+      loopContador();
+
+      // "Ligar" a animação
+      animacao.ligar();
+   </script>
+</body>
+
+</html>
